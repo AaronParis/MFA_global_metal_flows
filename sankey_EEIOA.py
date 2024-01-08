@@ -7,16 +7,48 @@ Created on Mon Jan  8 15:29:23 2024
 
 import pandas as pd
 import plotly.graph_objects as go
-from itertools import product
 
 #%%
 
 sankey_labels_absolute = True # if True, absolute numbers are shown in the sankey, otherwise percent
+highlight_LMIC = True
+
+
+title_text = "Impacts of the Dutch copper supply chain - Greenhouse gas emissions in tCO₂-eq., 2019"
+# "Impacts of the Dutch copper supply chain - Biodiversity loss in eco-points (UBP), "
+# "Impacts of the Dutch copper supply chain - Land use in m², "
+# "Impacts of the Dutch copper supply chain - Water use in m³, "
+
+# elif display == 'ghg': 
+#     sankey_flows = impacts_flows_complete[['source_stage', 'source_country', 'target_stage', 'target_country', 'GHG (tCO₂-eq.)']]
+#     title_text_NL = "Impacts of the Dutch copper supply chain - Greenhouse gas emissions in tCO₂-eq., " + str(year)
+#     title_text_world = "Impacts of the global copper supply chain - Greenhouse gas emissions in tCO₂-eq., " + str(year)
+#     sankey_flows.rename(columns={'GHG (tCO₂-eq.)':'value'}, inplace=True)
+    
+# elif display == 'biodiversity':  
+#     sankey_flows = impacts_flows_complete[['source_stage', 'source_country', 'target_stage', 'target_country', 'Biodiversity (UBP)']]
+#     title_text_NL = "Impacts of the Dutch copper supply chain - Biodiversity loss in eco-points (UBP), " + str(year)
+#     title_text_world = "Impacts of the global copper supply chain - Biodiversity loss in eco-points (UBP), " + str(year)
+#     sankey_flows.rename(columns={'Biodiversity (UBP)':'value'}, inplace=True)
+    
+# elif display == 'land_use':
+#     sankey_flows = impacts_flows_complete[['source_stage', 'source_country', 'target_stage', 'target_country', 'Land use (m2)']]
+#     title_text_NL = "Impacts of the Dutch copper supply chain - Land use in m², " + str(year)
+#     title_text_world = "Impacts of the global copper supply chain - Land use in m², " + str(year)
+#     sankey_flows.rename(columns={'Land use (m2)':'value'}, inplace=True)
+    
+# elif display == 'water':    
+#     sankey_flows = impacts_flows_complete[['source_stage', 'source_country', 'target_stage', 'target_country', 'Water (m3)']]  
+#     title_text_NL = "Impacts of the Dutch copper supply chain - Water use in m³, " + str(year)
+#     title_text_world = "Impacts of the global copper supply chain - Water use in m³, " + str(year)	 
+#     sankey_flows.rename(columns={'Water (m3)':'value'}, inplace=True)
+
+
 
 #%%
 
-sankey_flows = pd.read_csv(".csv")
-
+sankey_flows = pd.read_excel("test_data.xlsx")
+# sankey_flows = pd.read_csv(".csv")
 
 
 #%% adding the nodes
@@ -48,19 +80,15 @@ refining_codes.rename(columns={'target_stage': 'stage', 'target_country': 'count
 refining_codes = refining_codes.sort_values(by='country', ascending= True)
 refining_codes.reset_index(drop=True, inplace=True)
 
-if scale_to_NL == True:
-    # Use stage
-    use_codes = sankey_flows[['target_stage', 'target_country']].drop_duplicates()
-    use_codes = use_codes[use_codes['target_stage'] == 'use']
-    use_codes.rename(columns={'target_stage': 'stage', 'target_country': 'country'}, inplace = True)
-    use_codes = use_codes.sort_values(by='country', ascending= True)
-    use_codes.reset_index(drop=True, inplace=True)
+# Use stage
+use_codes = sankey_flows[['target_stage', 'target_country']].drop_duplicates()
+use_codes = use_codes[use_codes['target_stage'] == 'use']
+use_codes.rename(columns={'target_stage': 'stage', 'target_country': 'country'}, inplace = True)
+use_codes = use_codes.sort_values(by='country', ascending= True)
+use_codes.reset_index(drop=True, inplace=True)
 
 # Building total dataframe and resetting index to get a column with a unique number per node, sorted by stage and then country
-if scale_to_NL == True:
-    sankey_nodes = pd.concat([mining_codes, smelting_codes, refining_codes, use_codes])
-else:
-    sankey_nodes = pd.concat([mining_codes, smelting_codes, refining_codes])
+sankey_nodes = pd.concat([mining_codes, smelting_codes, refining_codes, use_codes])
 sankey_nodes = sankey_nodes.reset_index(drop=True)
 sankey_nodes = sankey_nodes.reset_index(drop=False)
 sankey_nodes.rename(columns={'index': 'node_number'}, inplace = True)
@@ -90,11 +118,6 @@ sankey_flows_final.rename(columns={'node_number_x': 'source',
                                 'node_number_y': 'target'}, 
                                  inplace = True)
 
-
-
-
-#%% Data export
-# sankey_flows_final.to_excel("sankey_data.xlsx")
 
 
 #%% ------------------------------------------------------------------ 
@@ -129,36 +152,32 @@ sizes_smelting_imports = sizes_smelting_imports.drop(['node_number', 'stage_y'],
 sizes_smelting = pd.merge(sizes_smelting_exports, sizes_smelting_imports, on=['stage', 'country']).assign(value=lambda x: x[['value_x', 'value_y']].max(axis=1))
 sizes_smelting = sizes_smelting[['stage', 'country', 'value']]
 
-if scale_to_NL == True:
 
-    sizes_refining_exports = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'refining'], export_sums[export_sums['stage'] == 'refining'], 
+
+
+sizes_refining_exports = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'refining'], export_sums[export_sums['stage'] == 'refining'], 
                           on='country', how='outer', suffixes=('', '_y'))
-    sizes_refining_exports = sizes_refining_exports.drop(['node_number', 'stage_y'], axis = 1,)
+sizes_refining_exports = sizes_refining_exports.drop(['node_number', 'stage_y'], axis = 1,)
 
-    sizes_refining_imports = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'refining'], import_sums[import_sums['stage'] == 'refining'], 
+sizes_refining_imports = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'refining'], import_sums[import_sums['stage'] == 'refining'], 
                           on='country', how='outer', suffixes=('', '_y'))
-    sizes_refining_imports = sizes_refining_imports.drop(['node_number', 'stage_y'], axis = 1,)
+sizes_refining_imports = sizes_refining_imports.drop(['node_number', 'stage_y'], axis = 1,)
 
-    # when calculating the impacts, the inflows and outflows are not always the same --> need to take the maximum of both to calculate the node size for the positions
-    sizes_refining = pd.merge(sizes_refining_exports, sizes_refining_imports, on=['stage', 'country']).assign(value=lambda x: x[['value_x', 'value_y']].max(axis=1))
-    sizes_refining = sizes_refining[['stage', 'country', 'value']]
+# when calculating the impacts, the inflows and outflows are not always the same --> need to take the maximum of both to calculate the node size for the positions
+sizes_refining = pd.merge(sizes_refining_exports, sizes_refining_imports, on=['stage', 'country']).assign(value=lambda x: x[['value_x', 'value_y']].max(axis=1))
+sizes_refining = sizes_refining[['stage', 'country', 'value']]
     
-    sizes_use = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'use'], import_sums[import_sums['stage'] == 'use'], 
+#%%
+sizes_use = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'use'], import_sums[import_sums['stage'] == 'use'], 
                           on='country', how='outer', suffixes=('', '_y'))
-    sizes_use = sizes_use.drop(['node_number', 'stage_y'], axis = 1,)
-else:    
-    # refining only has exports if allocating to NL/use
-    sizes_refining = pd.merge(sankey_nodes[sankey_nodes['stage'] == 'refining'], import_sums[import_sums['stage'] == 'refining'], 
-                          on='country', how='outer', suffixes=('', '_y'))
-    sizes_refining = sizes_refining.drop(['node_number', 'stage_y'], axis = 1,)
+sizes_use = sizes_use.drop(['node_number', 'stage_y'], axis = 1,)
+
 
 
 #%%
 # scale factor to normalise node size to scale 0 to 1
-if scale_to_NL == True:
-    total_scale = 1 / max(sizes_mining['value'].sum(), sizes_smelting['value'].sum(), sizes_refining['value'].sum(), sizes_use['value'].sum())
-else: 
-    total_scale = 1 / max(sizes_mining['value'].sum(), sizes_smelting['value'].sum(), sizes_refining['value'].sum())
+
+total_scale = 1 / max(sizes_mining['value'].sum(), sizes_smelting['value'].sum(), sizes_refining['value'].sum(), sizes_use['value'].sum())
 
 # need to be done per level as each has "1" place on the sankey (y-size)
 # Mining nodes
@@ -169,10 +188,7 @@ for i in range(1, len(sizes_mining)):
     sizes_mining.loc[i, 'y_pos'] = sizes_mining.loc[i, 'y_size']/2 + sizes_mining.loc[i-1, 'y_size']/2 + sizes_mining.loc[i-1, 'y_pos']
 
 # Smelting nodes
-if scale_to_NL == True:
-    sizes_smelting['x_pos'] = 0.335
-else:
-    sizes_smelting['x_pos'] = 0.5
+sizes_smelting['x_pos'] = 0.335
 sizes_smelting['y_size'] = sizes_smelting['value'] * total_scale
 sizes_smelting.loc[0, 'y_pos'] = sizes_smelting.loc[0, 'y_size']/2
 
@@ -180,10 +196,7 @@ for i in range(1, len(sizes_smelting)):
     sizes_smelting.loc[i, 'y_pos'] = sizes_smelting.loc[i, 'y_size']/2 + sizes_smelting.loc[i-1, 'y_size']/2 + sizes_smelting.loc[i-1, 'y_pos']
 
 # Refining nodes
-if scale_to_NL == True:
-    sizes_refining['x_pos'] = 0.665
-else:
-    sizes_refining['x_pos'] = 0.995
+sizes_refining['x_pos'] = 0.665
 sizes_refining['y_size'] = sizes_refining['value'] * total_scale
 sizes_refining.loc[0, 'y_pos'] = sizes_refining.loc[0, 'y_size']/2
 
@@ -191,21 +204,17 @@ for i in range(1, len(sizes_refining)):
     sizes_refining.loc[i, 'y_pos'] = sizes_refining.loc[i, 'y_size']/2 + sizes_refining.loc[i-1, 'y_size']/2 + sizes_refining.loc[i-1, 'y_pos']
 #%%
 # sizes use
-if scale_to_NL == True:
-    sizes_use['x_pos'] = 0.995
-    sizes_use['y_size'] = sizes_use['value'] * total_scale
-    sizes_use.loc[0, 'y_pos'] = sizes_use.loc[0, 'y_size']/2
+sizes_use['x_pos'] = 0.995
+sizes_use['y_size'] = sizes_use['value'] * total_scale
+sizes_use.loc[0, 'y_pos'] = sizes_use.loc[0, 'y_size']/2
 
-    for i in range(1, len(sizes_use)):
-        sizes_use.loc[i, 'y_pos'] = sizes_use.loc[i, 'y_size']/2 + sizes_use.loc[i-1, 'y_size']/2 + sizes_use.loc[i-1, 'y_pos']
+for i in range(1, len(sizes_use)):
+   sizes_use.loc[i, 'y_pos'] = sizes_use.loc[i, 'y_size']/2 + sizes_use.loc[i-1, 'y_size']/2 + sizes_use.loc[i-1, 'y_pos']
 
 
 #%%
 # assembling all sizes and positions
-if scale_to_NL == True:
-    sizes = pd.concat([sizes_mining, sizes_smelting, sizes_refining, sizes_use]).reset_index(drop = True)
-else: 
-    sizes = pd.concat([sizes_mining, sizes_smelting, sizes_refining]).reset_index(drop = True)
+sizes = pd.concat([sizes_mining, sizes_smelting, sizes_refining, sizes_use]).reset_index(drop = True)
 sizes.reset_index(drop =True, inplace=True)
 
 # Getting the share of the country for the specific stage
@@ -309,11 +318,6 @@ fig = go.Figure(go.Sankey(
     node=node
     )) 
 
-if scale_to_NL == True: 
-    title_text = title_text_NL
-else: 
-    title_text = title_text_world
-
 fig.update_layout(
     hovermode='x',
     font=dict(size=10),
@@ -325,12 +329,8 @@ fig.update_layout(
 )
 
 # Adding headers for mining, smelting and refining
-if scale_to_NL == True: 
-    annotations = ["Mining", "Smelting", "Refining", "Use"]
-    annotation_positions = [-0.01, 0.31, 0.69, 1.005]
-else: 
-    annotations = ["Mining", "Smelting", "Refining"]
-    annotation_positions = [-0.01, 0.5, 1.01]
+annotations = ["Mining", "Smelting", "Refining", "Use"]
+annotation_positions = [-0.01, 0.31, 0.69, 1.005]
 
 for i in range(len(annotations)): 
     fig.add_annotation(x=annotation_positions[i], 
