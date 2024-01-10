@@ -8,12 +8,16 @@ Created on Mon Jan  8 15:29:23 2024
 import pandas as pd
 import plotly.graph_objects as go
 
+
 # %%
 
 sankey_labels_absolute = (
     True  # if True, absolute numbers are shown in the sankey, otherwise percent
 )
 highlight_LMIC = True
+
+# Choice of threshold
+flow_threshold = 5000
 
 stage_1 = "mining"
 stage_2 = "smelting"
@@ -55,6 +59,9 @@ title_text = "Impacts of the Dutch copper supply chain - Greenhouse gas emission
 sankey_flows = pd.read_excel("test_data.xlsx")
 # sankey_flows = pd.read_csv(".csv")
 
+
+#%% Applying the threshold
+sankey_flows = sankey_flows[sankey_flows['value'] >= flow_threshold]
 
 # %% adding the nodes
 
