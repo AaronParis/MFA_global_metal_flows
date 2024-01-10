@@ -17,7 +17,7 @@ sankey_labels_absolute = (
 highlight_LMIC = True
 
 # Choice of threshold
-flow_threshold = 5000
+flow_threshold = 2000
 
 stage_1 = "mining"
 stage_2 = "smelting"
@@ -62,6 +62,7 @@ sankey_flows = pd.read_excel("test_data.xlsx")
 
 #%% Applying the threshold
 sankey_flows = sankey_flows[sankey_flows['value'] >= flow_threshold]
+sankey_flows.reset_index(drop=True, inplace=True)
 
 # %% adding the nodes
 
@@ -72,7 +73,7 @@ mining_codes.rename(columns={"source_stage": "stage", "source_country": "country
 mining_codes.reset_index(drop=True, inplace=True)
 
 # Smelting stage
-######### nto necessary because of the two balance things
+######### not necessary because of the two balance things
 smelting_codes_source = sankey_flows[["source_stage", "source_country"]].drop_duplicates()
 smelting_codes_source = smelting_codes_source[smelting_codes_source["source_stage"] == stage_2]
 smelting_codes_source.rename(
@@ -90,9 +91,19 @@ smelting_codes = smelting_codes.sort_values(by="country", ascending=True)
 smelting_codes.reset_index(drop=True, inplace=True)
 
 # Refining stage
-refining_codes = sankey_flows[["target_stage", "target_country"]].drop_duplicates()
-refining_codes = refining_codes[refining_codes["target_stage"] == stage_3]
-refining_codes.rename(columns={"target_stage": "stage", "target_country": "country"}, inplace=True)
+refining_codes_source = sankey_flows[["source_stage", "source_country"]].drop_duplicates()
+refining_codes_source = refining_codes_source[refining_codes_source["source_stage"] == stage_3]
+refining_codes_source.rename(
+    columns={"source_stage": "stage", "source_country": "country"}, inplace=True
+)
+
+refining_codes_target = sankey_flows[["target_stage", "target_country"]].drop_duplicates()
+refining_codes_target = refining_codes_target[refining_codes_target["target_stage"] == stage_3]
+refining_codes_target.rename(
+    columns={"target_stage": "stage", "target_country": "country"}, inplace=True
+)
+
+refining_codes = pd.concat([refining_codes_source, refining_codes_target]).drop_duplicates()
 refining_codes = refining_codes.sort_values(by="country", ascending=True)
 refining_codes.reset_index(drop=True, inplace=True)
 
@@ -152,6 +163,7 @@ export_sums = (
     sankey_flows_final.groupby(["source_stage", "source_country"])["value"].sum().reset_index()
 )
 export_sums.rename(columns={"source_stage": "stage", "source_country": "country"}, inplace=True)
+
 import_sums = (
     sankey_flows_final.groupby(["target_stage", "target_country"])["value"].sum().reset_index()
 )
