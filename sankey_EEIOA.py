@@ -18,10 +18,11 @@ highlight_LMIC = True
 # Choice of threshold
 flow_threshold = 2000
 
-stage_1 = "mining"
-stage_2 = "smelting"
-stage_3 = "refining"
-stage_4 = "use"
+stage_1 = "impact_sector"
+stage_2 = "impact_region"
+stage_3 = "production"
+stage_4 = "consumption"
+stage_5 = "End-use"
 
 title_text = "Impacts of the Dutch copper supply chain - Greenhouse gas emissions in tCO₂-eq., 2019"
 # "Impacts of the Dutch copper supply chain - Biodiversity loss in eco-points (UBP), "
@@ -55,8 +56,8 @@ title_text = "Impacts of the Dutch copper supply chain - Greenhouse gas emission
 
 # %%
 
-sankey_flows = pd.read_excel("test_data.xlsx")
-# sankey_flows = pd.read_csv(".csv")
+# sankey_flows = pd.read_excel("test_data.xlsx")
+sankey_flows = pd.read_csv("copper_GHG_2019_sankey_EEIOA.csv")
 
 
 #%% Applying the threshold
@@ -106,15 +107,36 @@ refining_codes = pd.concat([refining_codes_source, refining_codes_target]).drop_
 refining_codes = refining_codes.sort_values(by="country", ascending=True)
 refining_codes.reset_index(drop=True, inplace=True)
 
+
+
+
+# Consumption stage
+consumption_codes_source = sankey_flows[["source_stage", "source_country"]].drop_duplicates()
+consumption_codes_source = consumption_codes_source[consumption_codes_source["source_stage"] == stage_4]
+consumption_codes_source.rename(
+    columns={"source_stage": "stage", "source_country": "country"}, inplace=True
+)
+
+consumption_codes_target = sankey_flows[["target_stage", "target_country"]].drop_duplicates()
+consumption_codes_target = consumption_codes_target[consumption_codes_target["target_stage"] == stage_4]
+consumption_codes_target.rename(
+    columns={"target_stage": "stage", "target_country": "country"}, inplace=True
+)
+
+consumption_codes = pd.concat([consumption_codes_source, consumption_codes_target]).drop_duplicates()
+consumption_codes = consumption_codes.sort_values(by="country", ascending=True)
+consumption_codes.reset_index(drop=True, inplace=True)
+
 # Use stage
 use_codes = sankey_flows[["target_stage", "target_country"]].drop_duplicates()
-use_codes = use_codes[use_codes["target_stage"] == stage_4]
+use_codes = use_codes[use_codes["target_stage"] == stage_5]
 use_codes.rename(columns={"target_stage": "stage", "target_country": "country"}, inplace=True)
 use_codes = use_codes.sort_values(by="country", ascending=True)
 use_codes.reset_index(drop=True, inplace=True)
 
+
 # Building total dataframe and resetting index to get a column with a unique number per node, sorted by stage and then country
-sankey_nodes = pd.concat([mining_codes, smelting_codes, refining_codes, use_codes])
+sankey_nodes = pd.concat([mining_codes, smelting_codes, refining_codes, consumption_codes, use_codes])
 sankey_nodes = sankey_nodes.reset_index(drop=True)
 sankey_nodes = sankey_nodes.reset_index(drop=False)
 sankey_nodes.rename(columns={"index": "node_number"}, inplace=True)
@@ -245,10 +267,43 @@ sizes_refining = pd.merge(
 ).assign(value=lambda x: x[["value_x", "value_y"]].max(axis=1))
 sizes_refining = sizes_refining[["stage", "country", "value"]]
 
-# %%
-sizes_use = pd.merge(
+
+# consumption
+sizes_consumption_exports = pd.merge(
+    sankey_nodes[sankey_nodes["stage"] == stage_4],
+    export_sums[export_sums["stage"] == stage_4],
+    on="country",
+    how="outer",
+    suffixes=("", "_y"),
+)
+sizes_consumption_exports = sizes_consumption_exports.drop(
+    ["node_number", "stage_y"],
+    axis=1,
+)
+
+sizes_consumption_imports = pd.merge(
     sankey_nodes[sankey_nodes["stage"] == stage_4],
     import_sums[import_sums["stage"] == stage_4],
+    on="country",
+    how="outer",
+    suffixes=("", "_y"),
+)
+sizes_consumption_imports = sizes_consumption_imports.drop(
+    ["node_number", "stage_y"],
+    axis=1,
+)
+
+# when calculating the impacts, the inflows and outflows are not always the same --> need to take the maximum of both to calculate the node size for the positions
+sizes_consumption = pd.merge(
+    sizes_consumption_exports, sizes_consumption_imports, on=["stage", "country"]
+).assign(value=lambda x: x[["value_x", "value_y"]].max(axis=1))
+sizes_consumption = sizes_consumption[["stage", "country", "value"]]
+
+
+# %%
+sizes_use = pd.merge(
+    sankey_nodes[sankey_nodes["stage"] == stage_5],
+    import_sums[import_sums["stage"] == stage_5],
     on="country",
     how="outer",
     suffixes=("", "_y"),
@@ -266,6 +321,7 @@ total_scale = 1 / max(
     sizes_mining["value"].sum(),
     sizes_smelting["value"].sum(),
     sizes_refining["value"].sum(),
+    sizes_consumption["value"].sum(),
     sizes_use["value"].sum(),
 )
 
@@ -282,7 +338,7 @@ for i in range(1, len(sizes_mining)):
     )
 
 # Smelting nodes
-sizes_smelting["x_pos"] = 0.335
+sizes_smelting["x_pos"] = 0.2525
 sizes_smelting["y_size"] = sizes_smelting["value"] * total_scale
 sizes_smelting.loc[0, "y_pos"] = sizes_smelting.loc[0, "y_size"] / 2
 
@@ -294,7 +350,7 @@ for i in range(1, len(sizes_smelting)):
     )
 
 # Refining nodes
-sizes_refining["x_pos"] = 0.665
+sizes_refining["x_pos"] = 0.5
 sizes_refining["y_size"] = sizes_refining["value"] * total_scale
 sizes_refining.loc[0, "y_pos"] = sizes_refining.loc[0, "y_size"] / 2
 
@@ -304,6 +360,22 @@ for i in range(1, len(sizes_refining)):
         + sizes_refining.loc[i - 1, "y_size"] / 2
         + sizes_refining.loc[i - 1, "y_pos"]
     )
+    
+    
+# Consumption nodes
+sizes_consumption["x_pos"] = 0.7475
+sizes_consumption["y_size"] = sizes_consumption["value"] * total_scale
+sizes_consumption.loc[0, "y_pos"] = sizes_consumption.loc[0, "y_size"] / 2
+
+for i in range(1, len(sizes_consumption)):
+    sizes_consumption.loc[i, "y_pos"] = (
+        sizes_consumption.loc[i, "y_size"] / 2
+        + sizes_consumption.loc[i - 1, "y_size"] / 2
+        + sizes_consumption.loc[i - 1, "y_pos"]
+    )
+    
+    
+    
 # %%
 # sizes use
 sizes_use["x_pos"] = 0.995
@@ -318,9 +390,19 @@ for i in range(1, len(sizes_use)):
     )
 
 
+
+
+
+
+
+
+
+
+
+
 # %%
 # assembling all sizes and positions
-sizes = pd.concat([sizes_mining, sizes_smelting, sizes_refining, sizes_use]).reset_index(drop=True)
+sizes = pd.concat([sizes_mining, sizes_smelting, sizes_refining, sizes_consumption, sizes_use]).reset_index(drop=True)
 sizes.reset_index(drop=True, inplace=True)
 
 # Getting the share of the country for the specific stage
@@ -428,8 +510,8 @@ fig.update_layout(
 )
 
 # Adding headers for mining, smelting and refining
-annotations = [stage_1, stage_2, stage_3, stage_4]
-annotation_positions = [-0.01, 0.31, 0.69, 1.005]
+annotations = [stage_1, stage_2, stage_3, stage_4, stage_5]
+annotation_positions = [-0.01, 0.217, 0.5, 0.78, 1.005]
 
 for i in range(len(annotations)):
     fig.add_annotation(
