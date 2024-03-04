@@ -2,7 +2,7 @@
 
 This repository contains the a Jupyter Notebook created to reconcile production data for copper provided the U.S. Geological Survey as well as global trade data and link it to impact factors derived from Life Cycle Assessments. This was done as part of a study project in the course "Sustainability Challenge" of the Master of Science "Industrial Ecology" at the Leiden University (LU) and Delft University of Technology (TUD). The project was commissioned by PBL Netherlands Environmental Assessment Agency (PBL). PBL, LU and TUD are not responsible for the content of this notebook. 
 
-The team consisted of: Aaron Paris, Christina Drotenko, Alessia Linares Capurro, Kevin Heidemann, Adrien Perello-y-bestard
+The team consisted of: Aaron Paris, Christina Drotenko, Alessia Linares Capurro, Kevin Heideman, Adrien Perello-y-bestard
 
 Please consider the disclaimer in the Jupyter Notebook. The script must be considered work in progress and still has a lot of issues. In principal, the script can be adapted to other metals and countries with minimal changes. However, currently the code is not self-explanatory! If you are interested in using it, I would be happy to answer any questions that might help with adapting the script.
 
