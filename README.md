@@ -4,11 +4,10 @@ This repository contains the a Jupyter Notebook created to reconcile production 
 
 Please consider the disclaimer in the Jupyter Notebook. The script must be considered work in progress and still has a lot of issues. In principal, the script can be adapted to other metals and countries with minimal changes. However, currently the code is not self-explanatory! If you are interested in using it, I would be happy to answer any questions that might help with adapting the script.
 
-The global trade data can be found at: http://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37.
-
-The USGS data used is available at: https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information. 
-
-The impact data (which cannot be provided) was taken from Ecoinvent 3.9.1.
+The "data" folder only contains the colours used for the Sankey visualisation. The following data was used: 
+- The global trade data can be found at: http://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37.
+- The USGS data used is available at: https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information. 
+- The impact data (which cannot be provided) was taken from Ecoinvent 3.9.1.
 
 ## Contact
 
