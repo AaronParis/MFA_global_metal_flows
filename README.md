@@ -1,21 +1,11 @@
-# add DOI from Zenodo if available
+# Mapping Copper Flows And Environmental Impacts For The Dutch Energy Transition 
 
+This repository contains the a jupyter notebook created to reconcile production data for copper provided the U.S. Geological Survey as well as global trade data and link it to impact factors derived from Life Cycle Assessments. This was done as part of a study project in the course "Sustainability Challenge" of the Master of Science "Industrial Ecology" at the Leiden University (LU) and Delft University of Technology (TUD). The project was commissioned by PBL Netherlands Environmental Assessment Agency (PBL). PBL, LU and TUD are not responsible for the content of this notebook. 
 
-# Examining Environmental Impacts from Consumption Across Households in the European Union
+The global trade data can be found at: http://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37.
+The USGS data used is available at: https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information. 
 
-This repository contains supplementary data on the publication "..." by ... et al.
-
-
-## Data
-- _Aggregated_Data_ ...
-
-Please note that due to confidentiality restrictions we have no permission to share raw data. Access is permitted upon reasonable request from the authors and conditional on permission by the respective statistical authorities.
-
-- _Code_ includes ...
-
-- _Figures_ includes all figures from the manuscript and supplementary information.
-
-
+Please consider the disclaimer in the Jupyter Notebook. The script must be considered work in progress and still has a lot of issues. In principal, the script can be adapted to other metals and countries with minimal changes. However, currently the code is not self-explanatory! If you are interested in using it, I would be happy to answer any questions that might help with adapting the script. 
 
 ## Contact
 
